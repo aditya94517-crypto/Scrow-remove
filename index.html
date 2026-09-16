@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mechanical Puzzle Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="ui-top">
+        <div class="ui-left">Home</div>
+        <div class="ui-center">Level 1</div>
+        <div class="ui-right">Coins: 0</div>
+    </div>
+
+    <div id="game-container">
+        <!-- Canvas will be injected here -->
+    </div>
+
+    <div id="ui-bottom">
+        <button id="btn-hint">Hint</button>
+        <button id="btn-undo">Undo</button>
+        <button id="btn-reset">Reset</button>
+    </div>
+
+    <div id="level-complete" class="hidden">
+        <h1>LEVEL COMPLETE</h1>
+        <div class="stars">⭐⭐⭐</div>
+        <button id="btn-next">Next Level</button>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
