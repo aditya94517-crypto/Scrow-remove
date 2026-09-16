@@ -16,6 +16,11 @@ let selectedPiece = null;
 let currentScale = 1;
 let isPaused = true; // start paused on home screen
 
+// Player state
+let coins = 100;
+let drillsOwned = 0;
+let isDrillModeActive = false;
+
 function resizeCanvas() {
     // Calculate aspect ratio
     const containerWidth = container.clientWidth;
@@ -58,14 +63,64 @@ function gameLoop(timestamp) {
 const homeScreen = document.getElementById('home-screen');
 const gameUI = document.getElementById('game-ui');
 const pauseScreen = document.getElementById('pause-screen');
+const shopScreen = document.getElementById('shop-screen');
 const levelCompleteUI = document.getElementById('level-complete');
 const levelDisplay = document.getElementById('level-display');
+const coinsDisplay = document.getElementById('coins-display');
+const drillsDisplay = document.getElementById('drills-display');
+const btnDrill = document.getElementById('btn-drill');
+
+function updatePlayerUI() {
+    coinsDisplay.innerText = coins;
+    drillsDisplay.innerText = drillsOwned;
+}
+updatePlayerUI();
 
 document.getElementById('btn-play').addEventListener('click', () => {
     homeScreen.classList.remove('active');
     homeScreen.classList.add('hidden');
     gameUI.classList.remove('hidden');
     isPaused = false;
+    updatePlayerUI();
+});
+
+// Shop Logic
+document.getElementById('btn-shop-open').addEventListener('click', () => {
+    homeScreen.classList.remove('active');
+    homeScreen.classList.add('hidden');
+    shopScreen.classList.remove('hidden');
+    shopScreen.classList.add('active');
+});
+
+document.getElementById('btn-shop-close').addEventListener('click', () => {
+    shopScreen.classList.remove('active');
+    shopScreen.classList.add('hidden');
+    homeScreen.classList.remove('hidden');
+    homeScreen.classList.add('active');
+});
+
+document.getElementById('btn-buy-drill').addEventListener('click', () => {
+    if (coins >= 10) {
+        coins -= 10;
+        drillsOwned += 1;
+        updatePlayerUI();
+        alert("Purchased a drill!");
+    } else {
+        alert("Not enough coins!");
+    }
+});
+
+btnDrill.addEventListener('click', () => {
+    if (drillsOwned > 0) {
+        isDrillModeActive = !isDrillModeActive;
+        if (isDrillModeActive) {
+            btnDrill.classList.add('active');
+        } else {
+            btnDrill.classList.remove('active');
+        }
+    } else {
+        alert("You don't own any drills! Buy one in the shop.");
+    }
 });
 
 document.getElementById('btn-pause').addEventListener('click', () => {
@@ -93,6 +148,10 @@ document.getElementById('btn-home').addEventListener('click', () => {
 });
 
 window.onLevelComplete = function() {
+    // Reward coins
+    coins += 10;
+    updatePlayerUI();
+
     if (levelCompleteUI) {
         levelCompleteUI.classList.remove('hidden');
     }
@@ -148,6 +207,20 @@ function handleInputDown(event) {
     if (gameState.isComplete) return;
 
     const { x, y } = getVirtualCoordinates(event);
+
+    // Check if Drill mode is active
+    if (isDrillModeActive) {
+        // Ensure they clicked roughly within the board boundaries to drill
+        if (x > 50 && x < 550 && y > 100 && y < 700) {
+            gameState.board.addHole(x, y);
+            drillsOwned -= 1;
+            isDrillModeActive = false;
+            btnDrill.classList.remove('active');
+            updatePlayerUI();
+            return;
+        }
+    }
+
     const clickedScrew = gameState.getScrewAtPosition(x, y);
 
     if (clickedScrew) {

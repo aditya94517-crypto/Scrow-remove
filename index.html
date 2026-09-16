@@ -12,7 +12,20 @@
         <h1 class="game-title">SCREW<br>PUZZLE</h1>
         <button id="btn-play" class="primary-btn">PLAY</button>
         <button class="secondary-btn">Daily Challenge</button>
-        <button class="secondary-btn">Shop</button>
+        <button class="secondary-btn" id="btn-shop-open">Shop</button>
+    </div>
+
+    <!-- Shop Screen -->
+    <div id="shop-screen" class="overlay hidden">
+        <h1>SHOP</h1>
+        <div class="shop-item">
+            <!-- Simple drill image representation using text/emoji for now, could be an img tag -->
+            <div style="font-size: 4rem;">🪛</div>
+            <h2>Power Drill</h2>
+            <p>Drill a new hole anywhere!</p>
+            <button id="btn-buy-drill" class="primary-btn">Buy for 10 🪙</button>
+        </div>
+        <button id="btn-shop-close" class="secondary-btn">BACK</button>
     </div>
 
     <!-- Game Screen (Main UI) -->
@@ -28,6 +41,7 @@
         </div>
 
         <div id="ui-bottom">
+            <button id="btn-drill" title="Use Drill">🪛 <span id="drills-display">0</span></button>
             <button id="btn-hint">💡 Hint</button>
             <button id="btn-undo">↩️ Undo</button>
             <button id="btn-reset">🔄 Reset</button>
