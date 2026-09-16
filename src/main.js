@@ -14,6 +14,7 @@ let lastTime = 0;
 let selectedScrew = null;
 let selectedPiece = null;
 let currentScale = 1;
+let isPaused = true; // start paused on home screen
 
 function resizeCanvas() {
     // Calculate aspect ratio
@@ -45,24 +46,61 @@ function gameLoop(timestamp) {
     const deltaTime = timestamp - lastTime;
     lastTime = timestamp;
 
-    update(deltaTime);
-    render(ctx);
+    if (!isPaused) {
+        update(deltaTime);
+        render(ctx);
+    }
 
     requestAnimationFrame(gameLoop);
 }
 
 // UI Handling
+const homeScreen = document.getElementById('home-screen');
+const gameUI = document.getElementById('game-ui');
+const pauseScreen = document.getElementById('pause-screen');
+const levelCompleteUI = document.getElementById('level-complete');
+const levelDisplay = document.getElementById('level-display');
+
+document.getElementById('btn-play').addEventListener('click', () => {
+    homeScreen.classList.remove('active');
+    homeScreen.classList.add('hidden');
+    gameUI.classList.remove('hidden');
+    isPaused = false;
+});
+
+document.getElementById('btn-pause').addEventListener('click', () => {
+    isPaused = true;
+    pauseScreen.classList.remove('hidden');
+    pauseScreen.classList.add('active');
+});
+
+document.getElementById('btn-resume').addEventListener('click', () => {
+    isPaused = false;
+    pauseScreen.classList.remove('active');
+    pauseScreen.classList.add('hidden');
+});
+
+document.getElementById('btn-home').addEventListener('click', () => {
+    isPaused = true;
+    pauseScreen.classList.remove('active');
+    pauseScreen.classList.add('hidden');
+    gameUI.classList.add('hidden');
+    levelCompleteUI.classList.add('hidden');
+    homeScreen.classList.remove('hidden');
+    homeScreen.classList.add('active');
+    // Reset game state for when they come back
+    gameState = new GameState();
+});
+
 window.onLevelComplete = function() {
-    const levelCompleteUI = document.getElementById('level-complete');
     if (levelCompleteUI) {
         levelCompleteUI.classList.remove('hidden');
     }
 };
 
 document.getElementById('btn-reset').addEventListener('click', () => {
-    gameState = new GameState();
+    gameState.resetLevel();
     selectedScrew = null;
-    const levelCompleteUI = document.getElementById('level-complete');
     if (levelCompleteUI) {
         levelCompleteUI.classList.add('hidden');
     }
@@ -73,16 +111,15 @@ document.getElementById('btn-undo').addEventListener('click', () => {
 });
 
 window.onUndo = function() {
-    const levelCompleteUI = document.getElementById('level-complete');
     if (levelCompleteUI) {
         levelCompleteUI.classList.add('hidden');
     }
 };
 
 document.getElementById('btn-next').addEventListener('click', () => {
-    gameState = new GameState();
+    gameState.nextLevel();
+    levelDisplay.innerText = `Level ${gameState.currentLevel}`;
     selectedScrew = null;
-    const levelCompleteUI = document.getElementById('level-complete');
     if (levelCompleteUI) {
         levelCompleteUI.classList.add('hidden');
     }

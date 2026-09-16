@@ -4,14 +4,36 @@ import { Screw } from './Screw.js';
 
 export class GameState {
     constructor() {
+        this.currentLevel = 1;
+        this.loadLevel(this.currentLevel);
+    }
+
+    resetLevel() {
+        this.loadLevel(this.currentLevel);
+    }
+
+    nextLevel() {
+        this.currentLevel++;
+        this.loadLevel(this.currentLevel);
+    }
+
+    loadLevel(levelNumber) {
         this.board = new Board(600, 800);
         this.pieces = [];
         this.screws = [];
         this.isComplete = false;
         this.history = []; // store state for undo
 
-        // Setup initial level
-        this.initLevel1();
+        // Simple cyclic level loading for infinite feel
+        const levelType = (levelNumber - 1) % 3;
+
+        if (levelType === 0) {
+            this.initLevel1();
+        } else if (levelType === 1) {
+            this.initLevel2();
+        } else {
+            this.initLevel3();
+        }
     }
 
     saveState() {
@@ -85,6 +107,48 @@ export class GameState {
         this.screws.push(new Screw(2, 1));
         this.screws.push(new Screw(3, 2));
         this.screws.push(new Screw(4, 3));
+
+        this.updateVisualPositions();
+        this.checkPiecesFree();
+    }
+
+    initLevel2() {
+        this.board.addHole(300, 200); // 0
+        this.board.addHole(300, 400); // 1
+        this.board.addHole(300, 600); // 2
+        this.board.addHole(150, 400); // 3 (Empty)
+        this.board.addHole(450, 400); // 4 (Empty)
+
+        this.pieces.push(new Piece(1, 'STRAIGHT_BAR', 250, 150, 100, 300, [0, 1]));
+        this.pieces.push(new Piece(2, 'STRAIGHT_BAR', 250, 350, 100, 300, [1, 2], '#c0392b'));
+
+        this.screws.push(new Screw(1, 0));
+        this.screws.push(new Screw(2, 1)); // Shared hole conceptually, but screw is in 1
+        this.screws.push(new Screw(3, 2));
+
+        this.updateVisualPositions();
+        this.checkPiecesFree();
+    }
+
+    initLevel3() {
+        this.board.addHole(200, 200); // 0
+        this.board.addHole(400, 200); // 1
+        this.board.addHole(300, 400); // 2
+        this.board.addHole(200, 600); // 3
+        this.board.addHole(400, 600); // 4
+        this.board.addHole(300, 300); // 5 (Empty)
+        this.board.addHole(300, 500); // 6 (Empty)
+
+        // Triangle-like dependency
+        this.pieces.push(new Piece(1, 'LONG_BAR', 150, 175, 300, 50, [0, 1]));
+        this.pieces.push(new Piece(2, 'LONG_BAR', 250, 175, 50, 275, [1, 2], '#2980b9'));
+        this.pieces.push(new Piece(3, 'LONG_BAR', 150, 575, 300, 50, [3, 4], '#27ae60'));
+
+        this.screws.push(new Screw(1, 0));
+        this.screws.push(new Screw(2, 1));
+        this.screws.push(new Screw(3, 2));
+        this.screws.push(new Screw(4, 3));
+        this.screws.push(new Screw(5, 4));
 
         this.updateVisualPositions();
         this.checkPiecesFree();

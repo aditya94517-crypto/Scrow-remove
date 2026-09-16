@@ -17,13 +17,29 @@ body {
     touch-action: none; /* Prevent zooming/scrolling on mobile */
 }
 
+#game-ui {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
 #ui-top {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 10px 20px;
     font-weight: bold;
     font-size: 1.2rem;
     z-index: 10;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    box-shadow: none;
+    padding: 0;
 }
 
 #game-container {
@@ -35,6 +51,58 @@ body {
     width: 100%;
     height: 100%;
 }
+
+/* Overlays */
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.overlay.hidden {
+    display: none !important;
+}
+
+.overlay h1 {
+    font-size: 3rem;
+    margin-bottom: 30px;
+    text-align: center;
+    color: #4CAF50;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.game-title {
+    font-size: 4rem;
+    line-height: 1.1;
+    color: #8B4513 !important; /* Wood color */
+}
+
+.primary-btn {
+    background-color: var(--accent-color);
+    color: white;
+    font-size: 1.5rem;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    width: 250px;
+}
+
+.secondary-btn {
+    background-color: white;
+    color: var(--text-color);
+    margin-bottom: 15px;
+    width: 250px;
+}
+
 
 canvas {
     display: block;
@@ -69,16 +137,7 @@ button:active {
 }
 
 #level-complete {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(255, 255, 255, 0.9);
-    padding: 30px;
-    border-radius: 20px;
-    text-align: center;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    z-index: 100;
+    background-color: rgba(244, 236, 225, 0.95); /* semi-transparent background */
 }
 
 .hidden {

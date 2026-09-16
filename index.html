@@ -7,26 +7,45 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="ui-top">
-        <div class="ui-left">Home</div>
-        <div class="ui-center">Level 1</div>
-        <div class="ui-right">Coins: 0</div>
+    <!-- Home Screen -->
+    <div id="home-screen" class="overlay active">
+        <h1 class="game-title">SCREW<br>PUZZLE</h1>
+        <button id="btn-play" class="primary-btn">PLAY</button>
+        <button class="secondary-btn">Daily Challenge</button>
+        <button class="secondary-btn">Shop</button>
     </div>
 
-    <div id="game-container">
-        <!-- Canvas will be injected here -->
+    <!-- Game Screen (Main UI) -->
+    <div id="game-ui" class="hidden">
+        <div id="ui-top">
+            <button id="btn-pause" class="icon-btn">⏸️</button>
+            <div id="level-display" class="ui-center">Level 1</div>
+            <div class="ui-right">🪙 <span id="coins-display">0</span></div>
+        </div>
+
+        <div id="game-container">
+            <!-- Canvas will be injected here -->
+        </div>
+
+        <div id="ui-bottom">
+            <button id="btn-hint">💡 Hint</button>
+            <button id="btn-undo">↩️ Undo</button>
+            <button id="btn-reset">🔄 Reset</button>
+        </div>
     </div>
 
-    <div id="ui-bottom">
-        <button id="btn-hint">Hint</button>
-        <button id="btn-undo">Undo</button>
-        <button id="btn-reset">Reset</button>
+    <!-- Pause Screen -->
+    <div id="pause-screen" class="overlay hidden">
+        <h1>PAUSED</h1>
+        <button id="btn-resume" class="primary-btn">RESUME</button>
+        <button id="btn-home" class="secondary-btn">QUIT TO HOME</button>
     </div>
 
-    <div id="level-complete" class="hidden">
+    <!-- Level Complete Screen -->
+    <div id="level-complete" class="overlay hidden">
         <h1>LEVEL COMPLETE</h1>
         <div class="stars">⭐⭐⭐</div>
-        <button id="btn-next">Next Level</button>
+        <button id="btn-next" class="primary-btn">Next Level</button>
     </div>
 
     <script type="module" src="src/main.js"></script>

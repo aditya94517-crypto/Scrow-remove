@@ -53,6 +53,22 @@ function runTests() {
     state.moveScrew(screw2, 5); // move screw out of hole 1
     assert.strictEqual(state.pieces[0].isFree, true, 'Piece 1 should be free after screws removed');
 
+    // Test Level loading logic
+    state.nextLevel();
+    assert.strictEqual(state.currentLevel, 2, 'Should move to level 2');
+    // Level 2 has 5 holes
+    assert.strictEqual(state.board.holes.length, 5, 'Level 2 board should have 5 holes');
+
+    state.nextLevel();
+    assert.strictEqual(state.currentLevel, 3, 'Should move to level 3');
+    // Level 3 has 7 holes
+    assert.strictEqual(state.board.holes.length, 7, 'Level 3 board should have 7 holes');
+
+    state.nextLevel();
+    assert.strictEqual(state.currentLevel, 4, 'Should move to level 4');
+    // Level 4 maps to Level 1 due to cyclic modulo arithmetic
+    assert.strictEqual(state.board.holes.length, 6, 'Level 4 board should map to level 1 with 6 holes');
+
     console.log('All tests passed!');
 }
 
