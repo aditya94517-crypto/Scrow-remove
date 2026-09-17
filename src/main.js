@@ -16,10 +16,95 @@ let selectedPiece = null;
 let currentScale = 1;
 let isPaused = true; // start paused on home screen
 
+// CrazyGames Mock SDK hooks
+function cg_gameplayStart() {
+    console.log("[CrazyGames SDK] gameplayStart");
+}
+function cg_gameplayStop() {
+    console.log("[CrazyGames SDK] gameplayStop");
+}
+function cg_requestAd(type, callback) {
+    console.log(`[CrazyGames SDK] Requesting ${type} ad...`);
+    // Mock ad taking 2 seconds
+    isPaused = true;
+    setTimeout(() => {
+        console.log(`[CrazyGames SDK] ${type} ad finished.`);
+        isPaused = false;
+        if(callback) callback();
+    }, 2000);
+}
+
 // Player state
 let coins = 100;
 let drillsOwned = 0;
 let isDrillModeActive = false;
+let boardThemeColor1 = '#cda177'; // default wood
+let boardThemeColor2 = '#a67b54'; // default wood dark
+let screenShakeTime = 0;
+let shakeAmount = 0;
+let activeHint = null;
+
+// Audio Context for synthesis
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new AudioContext();
+    }
+}
+
+function playSound(type) {
+    if (!audioCtx) return;
+
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+
+    if (type === 'click') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.05);
+        gainNode.gain.setValueAtTime(0.5, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+        osc.start(now);
+        osc.stop(now + 0.05);
+    } else if (type === 'thunk') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+        gainNode.gain.setValueAtTime(1, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    } else if (type === 'win') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+        osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+        gainNode.gain.setValueAtTime(0.5, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
+    } else if (type === 'buy') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1000, now);
+        osc.frequency.setValueAtTime(1500, now + 0.1);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    }
+}
+
+function triggerScreenShake(amount, duration) {
+    shakeAmount = amount;
+    screenShakeTime = duration;
+}
 
 function resizeCanvas() {
     // Calculate aspect ratio
@@ -76,12 +161,33 @@ function updatePlayerUI() {
 }
 updatePlayerUI();
 
+// Prevent right click context menu everywhere
+document.addEventListener('contextmenu', event => event.preventDefault());
+
+// Fullscreen toggle logic
+document.getElementById('btn-fullscreen').addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.log(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+});
+
 document.getElementById('btn-play').addEventListener('click', () => {
+    initAudio();
+    playSound('click');
     homeScreen.classList.remove('active');
     homeScreen.classList.add('hidden');
     gameUI.classList.remove('hidden');
     isPaused = false;
     updatePlayerUI();
+    // Force a resize calculation now that the game-ui is visible and has dimensions
+    resizeCanvas();
+    cg_gameplayStart();
 });
 
 // Shop Logic
@@ -104,10 +210,27 @@ document.getElementById('btn-buy-drill').addEventListener('click', () => {
         coins -= 10;
         drillsOwned += 1;
         updatePlayerUI();
+        playSound('buy');
         alert("Purchased a drill!");
     } else {
         alert("Not enough coins!");
     }
+});
+
+// Theme Purchases
+document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        if (coins >= 20) {
+            coins -= 20;
+            updatePlayerUI();
+            boardThemeColor1 = e.target.dataset.color1;
+            boardThemeColor2 = e.target.dataset.color2;
+            playSound('buy');
+            alert(`Purchased ${e.target.dataset.theme} theme!`);
+        } else {
+            alert("Not enough coins!");
+        }
+    });
 });
 
 btnDrill.addEventListener('click', () => {
@@ -127,12 +250,14 @@ document.getElementById('btn-pause').addEventListener('click', () => {
     isPaused = true;
     pauseScreen.classList.remove('hidden');
     pauseScreen.classList.add('active');
+    cg_gameplayStop();
 });
 
 document.getElementById('btn-resume').addEventListener('click', () => {
     isPaused = false;
     pauseScreen.classList.remove('active');
     pauseScreen.classList.add('hidden');
+    cg_gameplayStart();
 });
 
 document.getElementById('btn-home').addEventListener('click', () => {
@@ -145,21 +270,49 @@ document.getElementById('btn-home').addEventListener('click', () => {
     homeScreen.classList.add('active');
     // Reset game state for when they come back
     gameState = new GameState();
+    cg_gameplayStop();
 });
 
 window.onLevelComplete = function() {
     // Reward coins
     coins += 10;
     updatePlayerUI();
+    playSound('win');
 
     if (levelCompleteUI) {
         levelCompleteUI.classList.remove('hidden');
     }
 };
 
+document.getElementById('btn-hint').addEventListener('click', () => {
+    const hint = gameState.getHint();
+    if (!hint) {
+        alert("No hints available right now.");
+        return;
+    }
+
+    const triggerHint = () => {
+        activeHint = hint;
+        if (typeof playSound !== 'undefined') playSound('click');
+    };
+
+    if (coins >= 20) {
+        coins -= 20;
+        updatePlayerUI();
+        triggerHint();
+    } else {
+        if(confirm("Not enough coins! Watch an ad to get a hint?")) {
+            cg_requestAd('rewarded', () => {
+                triggerHint();
+            });
+        }
+    }
+});
+
 document.getElementById('btn-reset').addEventListener('click', () => {
     gameState.resetLevel();
     selectedScrew = null;
+    activeHint = null;
     if (levelCompleteUI) {
         levelCompleteUI.classList.add('hidden');
     }
@@ -225,29 +378,123 @@ function handleInputDown(event) {
 
     if (clickedScrew) {
         selectedScrew = clickedScrew;
+        activeHint = null; // Clear hint on interaction
+        if (typeof playSound !== 'undefined') playSound('click');
     } else if (selectedScrew) {
         // Try to place the selected screw in an empty hole
         const targetHoleIndex = gameState.board.getHoleAt(x, y);
         if (targetHoleIndex !== -1) {
             const moved = gameState.moveScrew(selectedScrew, targetHoleIndex);
             if (moved) {
+                if (typeof playSound !== 'undefined') playSound('click');
                 selectedScrew = null; // Deselect after moving
+                activeHint = null;
             } else {
-                // Clicked an occupied hole or invalid
-                 selectedScrew = null;
+                if (typeof playSound !== 'undefined') playSound('thunk');
+                if (typeof triggerScreenShake !== 'undefined') triggerScreenShake(5, 150);
+                selectedScrew = null;
             }
         } else {
-            // Clicked outside any hole, deselect
+            if (typeof playSound !== 'undefined') playSound('thunk');
+            if (typeof triggerScreenShake !== 'undefined') triggerScreenShake(5, 150);
             selectedScrew = null;
         }
+    } else {
+         // Check if we clicked a free piece to drag
+         const clickedPiece = gameState.getPieceAtPosition(x, y);
+         if (clickedPiece && clickedPiece.isFree) {
+             gameState.saveState(); // Save state before dragging
+             selectedPiece = clickedPiece;
+             selectedPiece.isDragging = true;
+             // Store initial drag coords so we can bounce back if invalid
+             selectedPiece.dragStartX = selectedPiece.x;
+             selectedPiece.dragStartY = selectedPiece.y;
+         }
+    }
+}
+
+function handleInputMove(event) {
+    if (!selectedPiece) return;
+    const { x, y } = getVirtualCoordinates(event);
+
+    // Smoothly drag piece, respecting AABB center
+    const box = selectedPiece.getAABB();
+    selectedPiece.x = x - box.w / 2;
+    selectedPiece.y = y - box.h / 2;
+}
+
+// Right click or double tap to rotate piece while dragging
+let lastTapTime = 0;
+canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (selectedPiece && selectedPiece.isDragging) {
+        selectedPiece.rotation += Math.PI / 2;
+        if (typeof playSound !== 'undefined') playSound('click');
+    }
+});
+
+canvas.addEventListener('touchstart', (e) => {
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTapTime;
+
+    if (tapLength < 300 && tapLength > 0) {
+        // Double tap
+        if (selectedPiece && selectedPiece.isDragging) {
+            selectedPiece.rotation += Math.PI / 2;
+            if (typeof playSound !== 'undefined') playSound('click');
+        }
+    }
+    lastTapTime = currentTime;
+});
+
+function handleInputUp(event) {
+    if (selectedPiece) {
+        selectedPiece.isDragging = false;
+
+        // Check if it's dragged out of bounds to be removed
+        if (selectedPiece.y > gameState.board.height || selectedPiece.x < -100 || selectedPiece.x > gameState.board.width + 100) {
+            selectedPiece.isRemoved = true;
+            if (typeof playSound !== 'undefined') playSound('win'); // mini success for clearing
+        } else {
+            // It wasn't dragged out of bounds. Check if it overlaps with an existing solid piece.
+            let validDrop = true;
+            for (const other of gameState.pieces) {
+                if (other.id !== selectedPiece.id && !other.isRemoved && !other.isFree) {
+                    if (selectedPiece.overlaps(other)) {
+                        validDrop = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!validDrop) {
+                // Invalid drop, bounce back!
+                if (typeof playSound !== 'undefined') playSound('thunk');
+                if (typeof triggerScreenShake !== 'undefined') triggerScreenShake(3, 100);
+                selectedPiece.x = selectedPiece.dragStartX;
+                selectedPiece.y = selectedPiece.dragStartY;
+            } else {
+                // valid drop on the board somewhere else
+                if (typeof playSound !== 'undefined') playSound('click');
+            }
+        }
+
+        selectedPiece = null;
     }
 }
 
 canvas.addEventListener('mousedown', handleInputDown);
+canvas.addEventListener('mousemove', handleInputMove);
+canvas.addEventListener('mouseup', handleInputUp);
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault(); // Prevent scrolling
     handleInputDown(e);
 }, { passive: false });
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    handleInputMove(e);
+}, { passive: false });
+canvas.addEventListener('touchend', handleInputUp);
 
 
 function update(deltaTime) {
@@ -258,6 +505,16 @@ function render(ctx) {
     // Clear canvas
     ctx.clearRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 
+    ctx.save();
+
+    // Apply screen shake
+    if (screenShakeTime > 0) {
+        const dx = (Math.random() - 0.5) * shakeAmount;
+        const dy = (Math.random() - 0.5) * shakeAmount;
+        ctx.translate(dx, dy);
+        screenShakeTime -= 16; // rough approx of ms per frame
+    }
+
     // 1. Draw Board (Wood)
     ctx.save();
     // Shadow
@@ -265,12 +522,16 @@ function render(ctx) {
     ctx.shadowBlur = 20;
     ctx.shadowOffsetY = 10;
 
-    // Wood Base
-    const boardGradient = ctx.createLinearGradient(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-    boardGradient.addColorStop(0, '#cda177');
-    boardGradient.addColorStop(1, '#a67b54');
+    // Wood / Theme Base (Cached)
+    if (!ctx.cachedBoardGradient || ctx.lastThemeColor1 !== boardThemeColor1 || ctx.lastThemeColor2 !== boardThemeColor2) {
+        ctx.cachedBoardGradient = ctx.createLinearGradient(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+        ctx.cachedBoardGradient.addColorStop(0, boardThemeColor1);
+        ctx.cachedBoardGradient.addColorStop(1, boardThemeColor2);
+        ctx.lastThemeColor1 = boardThemeColor1;
+        ctx.lastThemeColor2 = boardThemeColor2;
+    }
 
-    ctx.fillStyle = boardGradient;
+    ctx.fillStyle = ctx.cachedBoardGradient;
     ctx.beginPath();
     ctx.roundRect(50, 100, 500, 600, 30);
     ctx.fill();
@@ -298,9 +559,10 @@ function render(ctx) {
 
         ctx.save();
 
-        // Translate for rotation and falling
-        const centerX = piece.x + piece.width / 2;
-        const centerY = piece.y + piece.height / 2;
+        // Translate for rotation and falling using AABB center
+        const box = piece.getAABB();
+        const centerX = box.x + box.w / 2;
+        const centerY = box.y + box.h / 2;
         ctx.translate(centerX, centerY);
         ctx.rotate(piece.rotation);
 
@@ -392,6 +654,32 @@ function render(ctx) {
 
         ctx.restore();
     }
+
+    // 4. Draw Hint
+    if (activeHint) {
+        const hScrew = activeHint.screw;
+        const tHole = gameState.board.holes[activeHint.targetHole];
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(hScrew.x, hScrew.y);
+        ctx.lineTo(tHole.x, tHole.y);
+        ctx.strokeStyle = 'rgba(46, 204, 113, 0.8)';
+        ctx.lineWidth = 8;
+        ctx.setLineDash([10, 15]);
+        ctx.stroke();
+
+        // Arrow head or target highlight
+        ctx.beginPath();
+        ctx.arc(tHole.x, tHole.y, tHole.radius + 5, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(46, 204, 113, 1)';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([]);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    ctx.restore(); // Restore shake translation
 }
 
 requestAnimationFrame(gameLoop);

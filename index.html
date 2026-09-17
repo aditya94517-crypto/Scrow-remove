@@ -18,12 +18,37 @@
     <!-- Shop Screen -->
     <div id="shop-screen" class="overlay hidden">
         <h1>SHOP</h1>
-        <div class="shop-item">
-            <!-- Simple drill image representation using text/emoji for now, could be an img tag -->
-            <div style="font-size: 4rem;">🪛</div>
-            <h2>Power Drill</h2>
-            <p>Drill a new hole anywhere!</p>
-            <button id="btn-buy-drill" class="primary-btn">Buy for 10 🪙</button>
+        <div class="shop-grid">
+            <div class="shop-item">
+                <div style="font-size: 4rem;">🪛</div>
+                <h2>Power Drill</h2>
+                <p>Drill a new hole anywhere!</p>
+                <button id="btn-buy-drill" class="primary-btn">Buy for 10 🪙</button>
+            </div>
+
+            <div class="shop-item">
+                <div style="width: 50px; height: 50px; background: linear-gradient(#3498db, #2980b9); margin: 0 auto; border-radius: 10px;"></div>
+                <h2>Blue Board</h2>
+                <button id="btn-buy-theme-blue" class="primary-btn theme-btn" data-theme="blue" data-color1="#3498db" data-color2="#2980b9">Buy for 20 🪙</button>
+            </div>
+
+            <div class="shop-item">
+                <div style="width: 50px; height: 50px; background: linear-gradient(#e74c3c, #c0392b); margin: 0 auto; border-radius: 10px;"></div>
+                <h2>Red Board</h2>
+                <button id="btn-buy-theme-red" class="primary-btn theme-btn" data-theme="red" data-color1="#e74c3c" data-color2="#c0392b">Buy for 20 🪙</button>
+            </div>
+
+            <div class="shop-item">
+                <div style="width: 50px; height: 50px; background: linear-gradient(#2ecc71, #27ae60); margin: 0 auto; border-radius: 10px;"></div>
+                <h2>Green Board</h2>
+                <button id="btn-buy-theme-green" class="primary-btn theme-btn" data-theme="green" data-color1="#2ecc71" data-color2="#27ae60">Buy for 20 🪙</button>
+            </div>
+
+            <div class="shop-item">
+                <div style="width: 50px; height: 50px; background: linear-gradient(#f39c12, #e67e22); margin: 0 auto; border-radius: 10px;"></div>
+                <h2>Orange Board</h2>
+                <button id="btn-buy-theme-orange" class="primary-btn theme-btn" data-theme="orange" data-color1="#f39c12" data-color2="#e67e22">Buy for 20 🪙</button>
+            </div>
         </div>
         <button id="btn-shop-close" class="secondary-btn">BACK</button>
     </div>
@@ -32,6 +57,7 @@
     <div id="game-ui" class="hidden">
         <div id="ui-top">
             <button id="btn-pause" class="icon-btn">⏸️</button>
+            <button id="btn-fullscreen" class="icon-btn" title="Toggle Fullscreen">⛶</button>
             <div id="level-display" class="ui-center">Level 1</div>
             <div class="ui-right">🪙 <span id="coins-display">0</span></div>
         </div>

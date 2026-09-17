@@ -1,6 +1,7 @@
 import { Board } from './Board.js';
 import { Piece } from './Piece.js';
 import { Screw } from './Screw.js';
+import { Generator } from './Generator.js';
 
 export class GameState {
     constructor() {
@@ -24,16 +25,29 @@ export class GameState {
         this.isComplete = false;
         this.history = []; // store state for undo
 
-        // Simple cyclic level loading for infinite feel
-        const levelType = (levelNumber - 1) % 3;
+        this.objective = 'CLEAR_ALL'; // Default objective
+        this.notifiedComplete = false;
 
-        if (levelType === 0) {
-            this.initLevel1();
-        } else if (levelType === 1) {
-            this.initLevel2();
+        if (levelNumber <= 4) {
+            if (levelNumber === 1) this.initLevel1();
+            else if (levelNumber === 2) this.initLevel2();
+            else if (levelNumber === 3) this.initLevel3();
+            else if (levelNumber === 4) this.initLevel4();
         } else {
-            this.initLevel3();
+            // Level 5+ uses procedural generation!
+            this.initProceduralLevel(levelNumber);
         }
+    }
+
+    initProceduralLevel(levelNumber) {
+        this.objective = 'CLEAR_ALL';
+        // Generate a level with difficulty scaling with level number
+        const genResult = Generator.generateLevel(this.board, levelNumber);
+        this.pieces = genResult.pieces;
+        this.screws = genResult.screws;
+
+        this.updateVisualPositions();
+        this.checkPiecesFree();
     }
 
     saveState() {
@@ -154,6 +168,38 @@ export class GameState {
         this.checkPiecesFree();
     }
 
+    initLevel4() {
+        this.objective = 'FREE_GOLDEN';
+
+        this.board.addHole(250, 300); // 0
+        this.board.addHole(350, 300); // 1
+        this.board.addHole(250, 500); // 2
+        this.board.addHole(350, 500); // 3
+        this.board.addHole(150, 400); // 4
+        this.board.addHole(450, 400); // 5
+
+        // The Golden Target (Layer 0, bottom)
+        this.pieces.push(new Piece(1, 'GOLDEN_TARGET', 200, 275, 200, 250, [0, 1, 2, 3], '#f1c40f', 0));
+
+        // Blocking piece across the top (Layer 1)
+        this.pieces.push(new Piece(2, 'BLOCKER', 100, 375, 400, 50, [4, 5], '#34495e', 1));
+
+        // Target piece requires 4 screws to be removed, AND the blocker on top needs to be removed first!
+        this.screws.push(new Screw(1, 0));
+        this.screws.push(new Screw(2, 1));
+        this.screws.push(new Screw(3, 2));
+        this.screws.push(new Screw(4, 3));
+        this.screws.push(new Screw(5, 4));
+        this.screws.push(new Screw(6, 5));
+
+        this.board.addHole(300, 100); // Empty hole
+        this.board.addHole(300, 700); // Empty hole
+        this.board.addHole(100, 200); // Empty hole
+
+        this.updateVisualPositions();
+        this.checkPiecesFree();
+    }
+
     updateVisualPositions() {
         for (const screw of this.screws) {
             const hole = this.board.holes[screw.holeIndex];
@@ -166,7 +212,7 @@ export class GameState {
         for (const piece of this.pieces) {
             if (piece.isRemoved) continue;
 
-            // Check if any screw is currently in any of this piece's required holes
+            // 1. Check screws
             let isScrewed = false;
             for (const requiredHole of piece.requiredHoles) {
                 if (this.isScrewInHole(requiredHole)) {
@@ -175,17 +221,41 @@ export class GameState {
                 }
             }
 
-            if (!isScrewed && !piece.isFree) {
+            // 2. Check layering blocking
+            // A piece cannot fall if another unremoved piece on a higher layer overlaps it
+            let isBlockedByLayer = false;
+            if (!isScrewed) {
+                for (const other of this.pieces) {
+                    if (other.id !== piece.id && !other.isRemoved) {
+                        if (other.layer > piece.layer && piece.overlaps(other)) {
+                            isBlockedByLayer = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!isScrewed && !isBlockedByLayer && !piece.isFree) {
                 piece.isFree = true;
                 // Add some initial velocity for falling off
                 piece.vy = 2;
                 piece.vRotation = (Math.random() - 0.5) * 0.05;
+            } else if ((isScrewed || isBlockedByLayer) && piece.isFree) {
+                // If it was somehow free but became blocked again (e.g. undo or dynamic)
+                piece.isFree = false;
             }
         }
 
-        // Check win condition
-        if (this.pieces.every(p => p.isRemoved)) {
-            this.isComplete = true;
+        // Check win condition based on objective
+        if (this.objective === 'CLEAR_ALL') {
+            if (this.pieces.every(p => p.isRemoved)) {
+                this.isComplete = true;
+            }
+        } else if (this.objective === 'FREE_GOLDEN') {
+            const goldenPiece = this.pieces.find(p => p.type === 'GOLDEN_TARGET');
+            if (goldenPiece && goldenPiece.isRemoved) {
+                this.isComplete = true;
+            }
         }
     }
 
@@ -227,6 +297,35 @@ export class GameState {
         this.updateVisualPositions();
         this.checkPiecesFree();
         return true;
+    }
+
+    getHint() {
+        // Simple hint: Find a piece that is almost free (only held by 1 screw)
+        // Or just suggest moving a screw out of a piece to an empty hole.
+
+        for (const piece of this.pieces) {
+            if (piece.isRemoved || piece.isFree) continue;
+
+            // Count how many screws are holding this piece
+            let holdingScrews = [];
+            for (const requiredHole of piece.requiredHoles) {
+                const screw = this.getScrewAtHole(requiredHole);
+                if (screw) {
+                    holdingScrews.push(screw);
+                }
+            }
+
+            // If it's held by screws, suggest moving one of them to the first empty hole
+            if (holdingScrews.length > 0) {
+                // Find an empty hole
+                for (let i = 0; i < this.board.holes.length; i++) {
+                    if (!this.isScrewInHole(i)) {
+                        return { screw: holdingScrews[0], targetHole: i };
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     update(deltaTime) {

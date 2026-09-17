@@ -3,6 +3,8 @@ import { Board } from '../src/Board.js';
 import { Piece } from '../src/Piece.js';
 import { Screw } from '../src/Screw.js';
 import { GameState } from '../src/GameState.js';
+import { Solver } from '../src/Solver.js';
+import { Generator } from '../src/Generator.js';
 
 // Minimal polyfill for window if needed by game state
 if (typeof window === 'undefined') {
@@ -66,8 +68,38 @@ function runTests() {
 
     state.nextLevel();
     assert.strictEqual(state.currentLevel, 4, 'Should move to level 4');
-    // Level 4 maps to Level 1 due to cyclic modulo arithmetic
-    assert.strictEqual(state.board.holes.length, 6, 'Level 4 board should map to level 1 with 6 holes');
+    // Level 4 is now our GOLDEN_TARGET level
+    assert.strictEqual(state.board.holes.length, 9, 'Level 4 board should have 9 holes');
+    assert.strictEqual(state.objective, 'FREE_GOLDEN', 'Level 4 should have FREE_GOLDEN objective');
+
+    // Test Layer Logic
+    const pieceOverlap1 = new Piece(1, 'TEST', 0, 0, 50, 50, [], '#fff', 0);
+    const pieceOverlap2 = new Piece(2, 'TEST', 25, 25, 50, 50, [], '#fff', 1);
+    const pieceNoOverlap = new Piece(3, 'TEST', 100, 100, 50, 50, [], '#fff', 1);
+
+    assert.strictEqual(pieceOverlap1.overlaps(pieceOverlap2), true, 'Pieces should overlap');
+    assert.strictEqual(pieceOverlap1.overlaps(pieceNoOverlap), false, 'Pieces should not overlap');
+
+    // Simulate game state layer blocking
+    state.pieces = [pieceOverlap1, pieceOverlap2];
+    state.screws = []; // No screws
+    state.checkPiecesFree();
+
+    // pieceOverlap1 is on layer 0, pieceOverlap2 is on layer 1.
+    // Therefore, pieceOverlap1 should be blocked by pieceOverlap2
+    assert.strictEqual(pieceOverlap1.isFree, false, 'Piece 1 should be blocked by layer 1 piece');
+    assert.strictEqual(pieceOverlap2.isFree, true, 'Piece 2 should be free as nothing is above it');
+
+    // Test Solver and Generator
+    const testBoard = new Board(600, 800);
+    const genResult = Generator.generateLevel(testBoard, 1);
+
+    assert.strictEqual(genResult.pieces.length > 0, true, 'Generator should create pieces');
+    assert.strictEqual(genResult.screws.length > 0, true, 'Generator should create screws');
+    assert.strictEqual(testBoard.holes.length >= genResult.screws.length, true, 'Generator should create enough holes');
+
+    const isSolvable = Solver.isSolvable(testBoard.holes, genResult.pieces, genResult.screws);
+    assert.strictEqual(isSolvable, true, 'Generated level must be solvable');
 
     console.log('All tests passed!');
 }
