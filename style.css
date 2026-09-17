@@ -1,0 +1,175 @@
+:root {
+    --bg-color: #f4ece1;
+    --text-color: #333;
+    --accent-color: #4CAF50;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    touch-action: none; /* Prevent zooming/scrolling on mobile */
+}
+
+#game-ui {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+#ui-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    z-index: 10;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    box-shadow: none;
+    padding: 0;
+}
+
+#game-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Overlays */
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.overlay.hidden {
+    display: none !important;
+}
+
+.overlay h1 {
+    font-size: 3rem;
+    margin-bottom: 30px;
+    text-align: center;
+    color: #4CAF50;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.game-title {
+    font-size: 4rem;
+    line-height: 1.1;
+    color: #8B4513 !important; /* Wood color */
+}
+
+.primary-btn {
+    background-color: var(--accent-color);
+    color: white;
+    font-size: 1.5rem;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    width: 250px;
+}
+
+.secondary-btn {
+    background-color: white;
+    color: var(--text-color);
+    margin-bottom: 15px;
+    width: 250px;
+}
+
+.shop-item {
+    background: rgba(255,255,255,0.8);
+    padding: 20px;
+    border-radius: 20px;
+    text-align: center;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.shop-item h2 {
+    margin: 10px 0;
+    color: #333;
+}
+
+.shop-item p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+
+canvas {
+    display: block;
+    /* Box shadow to give the board depth */
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+}
+
+#ui-bottom {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 15px;
+    z-index: 10;
+}
+
+#btn-drill.active {
+    background-color: #f1c40f; /* Highlight when drilling mode is on */
+    border-color: #f39c12;
+}
+
+button {
+    background-color: #fff;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.1s;
+}
+
+button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+}
+
+#level-complete {
+    background-color: rgba(244, 236, 225, 0.95); /* semi-transparent background */
+}
+
+.hidden {
+    display: none !important;
+}
+
+.stars {
+    font-size: 2rem;
+    margin: 15px 0;
+}
